@@ -10,13 +10,42 @@ const ShortenUrl: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const urlPattern = new RegExp(
+    "^(https?:\\/\\/)?" + // protocol
+      "((([a-zA-Z\\d]([a-zA-Z\\d-]*[a-zA-Z\\d])*)\\.?)+[a-zA-Z]{2,}|" + // domain name
+      "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
+      "(\\:\\d+)?(\\/[-a-zA-Z\\d%_.~+]*)*" + // port and path
+      "(\\?[;&a-zA-Z\\d%_.~+=-]*)?" + // query string
+      "(\\#[-a-zA-Z\\d_]*)?$", // fragment locator
+    "i"
+  );
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
+
+    if (!urlPattern.test(originalUrl)) {
+      setError("Invalid URL format");
+      setLoading(false);
+      return;
+    }
+
+    const expiryDaysNumber = parseInt(expiryInDays, 10);
+    if (
+      isNaN(expiryDaysNumber) ||
+      expiryDaysNumber < 0 ||
+      expiryDaysNumber > 365
+    ) {
+      setError("Expiry days must be a whole number between 0 and 365");
+      setLoading(false);
+      return;
+    }
+
     try {
+      const strippedUrl = originalUrl.replace(/^(https?:\/\/)/, "");
       setShortenedUrl("");
       const response = await axios.post("/api/shorturl", {
-        originalUrl,
+        originalUrl: strippedUrl,
         expiryInDays,
       });
 
@@ -27,6 +56,13 @@ const ShortenUrl: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(
+      `https://kwik.azurewebsites.net/api/ShortUrl/rd/${shortenedUrl}`
+    );
+    alert("URL copied to clipboard!");
   };
 
   return (
@@ -63,6 +99,8 @@ const ShortenUrl: React.FC = () => {
           <input
             id="expiryInDays"
             type="number"
+            min="0"
+            max="365"
             value={expiryInDays}
             onChange={(e) => setExpiryInDays(e.target.value)}
             placeholder="Enter days for short URL to expire"
@@ -86,14 +124,30 @@ const ShortenUrl: React.FC = () => {
       {shortenedUrl && (
         <div className="mt-4 text-center">
           <p>Shortened URL:</p>
-          <a
-            href={`https://myuniqueappname12345mick01.azurewebsites.net/api/ShortUrl/rd/${shortenedUrl}`}
-            className="text-blue-500"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Click to go to destination URL
-          </a>
+          <div className="flex flex-col items-center justify-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={`https://kwik.azurewebsites.net/api/ShortUrl/rd/${shortenedUrl}`}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:shadow-outline"
+            />
+            <div className="flex flex-row gap-2">
+              <button
+                onClick={handleCopy}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                Copy
+              </button>
+              <a
+                href={`https://kwik.azurewebsites.net/api/ShortUrl/rd/${shortenedUrl}`}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold text-nowrap py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Go to Site
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>

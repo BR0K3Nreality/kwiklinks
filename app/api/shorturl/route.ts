@@ -4,10 +4,13 @@ import axios from "axios";
 export async function POST(request: NextRequest) {
   try {
     const { originalUrl, expiryInDays } = await request.json();
-    const response = await axios.post("https://myuniqueappname12345mick01.azurewebsites.net/api/ShortUrl", {
-      originalUrl,
-      expiryInDays,
-    });
+    const response = await axios.post(
+      "https://kwik.azurewebsites.net/api/ShortUrl",
+      {
+        originalUrl,
+        expiryInDays,
+      }
+    );
     return NextResponse.json(response.data);
   } catch (error) {
     return NextResponse.json(
